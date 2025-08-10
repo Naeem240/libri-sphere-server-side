@@ -28,7 +28,7 @@ app.use(cookieParser());
   app.use('/borrowed-books', require('./routes/borrowedBooks'));
   app.use('/auth', require('./routes/auth'));
 
-  app.get('/', (req, res) => res.send('📚 Library API running'));
+  app.get('/', (req, res) => res.send('📚 Library API Running'));
 
   const port = process.env.PORT || 3000;
   app.listen(port, () => console.log(`🚀 Server running on port ${port}`));
