@@ -69,6 +69,9 @@ async function run() {
 
     const borrowedBooksCollection = client.db('libriSphere').collection('borrowed-books');
 
+    const subscriptionsCollection = client.db('libriSphere').collection('subscriptions');
+
+
     // create a text index (safe to call multiple times)
     try {
       await booksCollection.createIndex({ name: 'text', author: 'text', category: 'text' });
@@ -105,6 +108,50 @@ async function run() {
       const result = await booksCollection.insertOne(newBook);
       res.send(result);
     })
+
+    // Get all subscriptions
+    // app.get('/subscriptions', async (req, res) => {
+    //   try {
+    //     const result = await subscriptionsCollection
+    //       .find({})
+    //       .project({ name: 1, email: 1, subscribedAt: 1 }) // only return necessary fields
+    //       .sort({ subscribedAt: -1 }) // newest first
+    //       .toArray();
+
+    //     res.send(result);
+    //   } catch (err) {
+    //     console.error('Error fetching subscriptions:', err);
+    //     res.status(500).send({ message: 'Internal server error' });
+    //   }
+    // });
+
+    // Save new subscription
+    app.post('/subscriptions', async (req, res) => {
+      try {
+        const { name, email } = req.body;
+
+        if (!name || !email) {
+          return res.status(400).send({ message: 'Name and email are required' });
+        }
+
+        // Optional: prevent duplicate subscriptions
+        const existing = await subscriptionsCollection.findOne({ email: email });
+        if (existing) {
+          return res.status(409).send({ message: 'Email is already subscribed' });
+        }
+
+        const result = await subscriptionsCollection.insertOne({
+          name,
+          email,
+          subscribedAt: new Date()
+        });
+
+        res.send({ success: true, insertedId: result.insertedId });
+      } catch (err) {
+        console.error('Subscription error:', err);
+        res.status(500).send({ message: 'Internal server error' });
+      }
+    });
 
 
     // Search API
