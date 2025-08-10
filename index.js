@@ -69,6 +69,13 @@ async function run() {
 
     const borrowedBooksCollection = client.db('libriSphere').collection('borrowed-books');
 
+    // create a text index (safe to call multiple times)
+    try {
+      await booksCollection.createIndex({ name: 'text', author: 'text', category: 'text' });
+    } catch (err) {
+      console.warn('Could not create text index (it may already exist):', err.message);
+    }
+
     // JWT Token APIs
     app.post('/jwt', async (req, res) => {
       const { email } = req.body;
@@ -98,6 +105,37 @@ async function run() {
       const result = await booksCollection.insertOne(newBook);
       res.send(result);
     })
+
+
+    // Search API
+    app.get('/books/search', async (req, res) => {
+      try {
+        const q = (req.query.q || '').trim();
+        if (!q) return res.send([]);
+
+        // simple case-insensitive regex search across three fields
+        const regex = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+
+        const projection = { name: 1, author: 1, category: 1, image: 1, display_url: 1 };
+
+        const result = await booksCollection
+          .find({
+            $or: [
+              { name: { $regex: regex } },
+              { author: { $regex: regex } },
+              { category: { $regex: regex } }
+            ]
+          })
+          .project(projection)
+          .limit(50)
+          .toArray();
+
+        res.send(result);
+      } catch (err) {
+        console.error('Search error:', err);
+        res.status(500).send({ message: 'Search failed' });
+      }
+    });
 
     // Books By Category
     app.get('/books/:category', async (req, res) => {
@@ -216,7 +254,7 @@ run().catch(console.dir);
 
 
 app.get('/', (req, res) => {
-  res.send("Library Data is loading")
+  res.send("Library Data is loadings")
 })
 
 app.listen(port, () => {
