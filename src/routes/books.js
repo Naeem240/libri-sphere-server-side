@@ -6,7 +6,8 @@ const {
   addBook,
   updateBook,
   deleteBook,
-  searchBooks  // import here
+  searchBooks,
+  updateBookQuantity// import here
 } = require('../controllers/booksController');
 
 const router = express.Router();
@@ -22,5 +23,7 @@ router.get('/:category/:bookId', getBookByCategoryAndId);
 router.post('/', addBook);
 router.put('/:id', updateBook);
 router.delete('/:id', deleteBook);
+// PATCH /books/:category/:id
+router.patch('/:category/:id', updateBookQuantity);
 
 module.exports = router;
