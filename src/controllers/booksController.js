@@ -1,4 +1,6 @@
 const { ObjectId } = require('mongodb');
+const { getDb } = require('../config/db'); // adjust path if needed
+
 async function getAllBooks(req, res) {
     try {
         const books = await req.db.collection('books').find().toArray();
@@ -111,4 +113,29 @@ async function deleteBook(req, res) {
     }
 }
 
-module.exports = { getAllBooks, getBookById, addBook, updateBook, deleteBook, getBooksByCategory, getBookByCategoryAndId, searchBooks };
+// PATCH: Update book quantity
+async function updateBookQuantity(req, res) {
+  try {
+    const id = req.params.id;
+    const db = getDb();
+    const booksCollection = db.collection('books');
+
+    const filter = { _id: new ObjectId(id) };
+    const options = { upsert: true };
+    const updatedDoc = {
+      $set: { quantity: req.body.quantity }
+    };
+
+    const result = await booksCollection.updateOne(filter, updatedDoc, options);
+    res.send(result);
+  } catch (error) {
+    console.error('Error updating quantity:', error);
+    res.status(500).json({ message: 'Failed to update quantity' });
+  }
+}
+
+module.exports = {
+  updateBookQuantity
+};
+
+module.exports = { getAllBooks, getBookById, addBook, updateBook, deleteBook, getBooksByCategory, getBookByCategoryAndId, searchBooks, updateBookQuantity };
